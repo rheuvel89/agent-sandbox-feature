@@ -1,0 +1,35 @@
+# Publishes the feature to ghcr.io when a version tag is pushed: tag vX.Y.Z publishes
+# ghcr.io/<owner>/agent-sandbox-feature/agent-sandbox with tags X.Y.Z, X.Y, X and latest.
+# A release tags this repo and the images repo (GitLab) with the same vX.Y.Z: the start step
+# uses the feature's version as the tag of the images.
+name: Release
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag matches the feature's version
+        run: |
+          version=$(jq -r .version src/agent-sandbox/devcontainer-feature.json)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME doesn't match version $version in devcontainer-feature.json" >&2
+            exit 1
+          fi
+
+      - name: Publish
+        uses: devcontainers/action@v1
+        with:
+          publish-features: "true"
+          base-path-to-features: "./src"
+          generate-docs: "false"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

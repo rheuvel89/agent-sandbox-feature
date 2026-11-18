@@ -1,0 +1,35 @@
+{
+  "id": "agent-sandbox",
+  "version": "0.1.0",
+  "name": "Agent sandbox",
+  "description": "Runs the dev container as a sandbox for coding agents: only under gVisor, all traffic through the sandbox's own credential proxy and egress filter, workspace in a Docker volume. Needs the agent-sandbox start step in initializeCommand.",
+  "documentationURL": "https://github.com/rheuvel89/agent-sandbox-feature",
+  "options": {
+    "project": {
+      "type": "string",
+      "default": "",
+      "description": "Project name: chooses the secrets file ~/.agent-sandbox/<project>/secrets.env. Empty means the folder name. Read by the start step, not by this feature."
+    }
+  },
+  "containerEnv": {
+    "HTTP_PROXY": "http://agent-proxy:3128",
+    "HTTPS_PROXY": "http://agent-proxy:3128",
+    "http_proxy": "http://agent-proxy:3128",
+    "https_proxy": "http://agent-proxy:3128",
+    "NO_PROXY": "localhost,127.0.0.1,::1",
+    "no_proxy": "localhost,127.0.0.1,::1",
+    "NODE_USE_ENV_PROXY": "1",
+    "NODE_EXTRA_CA_CERTS": "/var/lib/agent-sandbox/agent-sandbox-ca.crt",
+    "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt",
+    "REQUESTS_CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt"
+  },
+  "mounts": [
+    "source=agent-sandbox-ca-${devcontainerId},target=/var/lib/agent-sandbox,type=volume,readonly",
+    "source=agent-sandbox-ws-${devcontainerId},target=/workspaces,type=volume"
+  ],
+  "entrypoint": "/usr/local/share/agent-sandbox/entrypoint.sh",
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils",
+    "ghcr.io/devcontainers/features/docker-in-docker"
+  ]
+}
