@@ -36,15 +36,30 @@ log() { echo "agent-sandbox: $*"; }
 note() { log "$*"; notes="$notes$*
 "; }
 
-# --- 1. gVisor guard -----------------------------------------------------------------------
-# Both signals are true under runsc and runsc-dind and false under runc, privileged or not.
-if ! { dmesg 2>/dev/null | head -n 1 | grep -q 'Starting gVisor' && uname -r | grep -q -- '-gvisor$'; }; then
-  echo "agent-sandbox: REFUSING TO START: this dev container is not running under gVisor." >&2
-  echo "agent-sandbox: add \"--runtime=runsc-dind\" (or \"--runtime=runsc\") to runArgs in devcontainer.json." >&2
+# Stops the container: an exit code alone doesn't (see above)
+refuse() {
+  echo "agent-sandbox: REFUSING TO START: $1" >&2
+  echo "agent-sandbox: $2" >&2
   kill -TERM 1
   sleep 5
   exit 1
+}
+
+# --- 1. gVisor guard, read-only CA volume ----------------------------------------------------
+# Both gVisor signals are true under runsc and runsc-dind and false under runc, privileged or not.
+if ! { dmesg 2>/dev/null | head -n 1 | grep -q 'Starting gVisor' && uname -r | grep -q -- '-gvisor$'; }; then
+  refuse "this dev container is not running under gVisor." \
+    "add \"--runtime=runsc-dind\" (or \"--runtime=runsc\") to runArgs in devcontainer.json."
 fi
+# The volume is shared with the filter and the credential proxy, so the sandbox must not be able to
+# write it, not even as root (which Docker-in-Docker gives it). Only a read-only mount made by Docker
+# guarantees that; a feature can't declare one, so the repo's devcontainer.json does.
+options=$(awk -v dir="$public" '$2 == dir { o = $4 } END { print o }' /proc/mounts)
+case ",$options," in
+  *,ro,*) ;;
+  *) refuse "$public is not mounted read-only (mount options: ${options:-not mounted})." \
+       "add to \"mounts\" in devcontainer.json: \"source=agent-sandbox-ca-\${devcontainerId},target=$public,type=volume,readonly\"" ;;
+esac
 
 # --- 2. Wait for the start step's files ------------------------------------------------------
 i=0

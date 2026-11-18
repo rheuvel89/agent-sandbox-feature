@@ -34,6 +34,9 @@ volumes, networks and proxies it expects. All of these go into `.devcontainer/de
   "--runtime=runsc-dind",
   "--network=agent-sandbox-${localWorkspaceFolderBasename}-${devcontainerId}",
   "--label=agent-sandbox.id=${devcontainerId}"
+],
+"mounts": [
+  "source=agent-sandbox-ca-${devcontainerId},target=/var/lib/agent-sandbox,type=volume,readonly"
 ]
 ```
 
@@ -41,6 +44,10 @@ volumes, networks and proxies it expects. All of these go into `.devcontainer/de
   feature's version (`:0` above): the start step uses the feature's version for every image.
 - `initializeCommand` must not contain double quotes (Windows passes them on literally).
 - `--runtime=runsc` instead of `runsc-dind` for a repo without Docker-in-Docker.
+- The `mounts` line gives the sandbox its CA volume **read-only**, in a way even root inside the
+  sandbox can't undo. The feature can't declare that itself: the feature schema only allows the
+  object form, which drops `readonly`. Keep the string form. The feature refuses to start when the
+  volume isn't mounted read-only.
 - The start step refuses to open the sandbox, and says why, when one of these settings is missing.
 - Open the root of a git clone. The base image needs `apt` or `apk`, and a user with uid 1000
   (like the `mcr.microsoft.com/devcontainers/*` images).

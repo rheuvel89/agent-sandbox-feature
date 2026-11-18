@@ -24,8 +24,7 @@
     "REQUESTS_CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt"
   },
   "mounts": [
-    "source=agent-sandbox-ca-${devcontainerId},target=/var/lib/agent-sandbox,type=volume,readonly",
-    "source=agent-sandbox-ws-${devcontainerId},target=/workspaces,type=volume"
+    { "type": "volume", "source": "agent-sandbox-ws-${devcontainerId}", "target": "/workspaces" }
   ],
   "entrypoint": "/usr/local/share/agent-sandbox/entrypoint.sh",
   "installsAfter": [
