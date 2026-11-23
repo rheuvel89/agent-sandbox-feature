@@ -56,7 +56,7 @@ Option:
 
 | Option | Default | Meaning |
 |---|---|---|
-| `project` | the folder name | Chooses the project secrets file `~/.agent-sandbox/<project>/secrets.env`. Read by the start step. |
+| `project` | the folder name | Chooses the project folder in your home folder, `~/.agent-sandbox/<project>/`, with your secrets, credential rules and rule files for that project. Read by the start step. |
 
 ## Releases
 
