@@ -161,6 +161,49 @@ client_secret = "${GRAPH_CLIENT_SECRET}"
 
 A rule whose `${NAME}` is in none of the secrets files is skipped, and the banner says which.
 
+**Git over https** (pushing and fetching from inside the sandbox). An ssh remote can't get through
+the proxy, so the repo's remote must be https (`git remote set-url origin https://gitlab.com/group/repo.git`).
+Git hosts take the token as the password of HTTP Basic authentication, so the secret is the base64
+of `oauth2:<your token>` (the part before the colon is a user name, which both hosts ignore for a
+token). Put the rule in your own `~/.agent-sandbox/credentials.toml`, since the token is yours:
+
+```toml
+# gitlab.com: a personal or project access token with read_repository / write_repository
+[[header]]
+hosts = ["gitlab.com"]
+name  = "Authorization"
+value = "Basic ${GITLAB_BASIC_AUTH}"
+
+# github.com: a fine-grained personal access token with Contents read/write on the repos
+[[header]]
+hosts = ["github.com"]
+name  = "Authorization"
+value = "Basic ${GITHUB_BASIC_AUTH}"
+```
+
+with the hosts allowed in your `~/.agent-sandbox/rules/allowed-domains.txt`:
+
+```
+gitlab.com
+github.com
+```
+
+and the encoded values in `~/.agent-sandbox/secrets.env`. To make one, in PowerShell:
+
+```powershell
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("oauth2:<your token>"))
+```
+
+or in bash: `printf '%s' 'oauth2:<your token>' | base64 -w0`. Then:
+
+```
+GITLAB_BASIC_AUTH=b2F1dGgyOmdscGF0LS4uLg==
+```
+
+Git inside the sandbox needs no credentials of its own: the proxy adds the header to every https
+request to that host, so `git push` and `git fetch` just work, and the token never enters the
+sandbox. Use a token that can reach only the repos the agent should, and give it an expiry date.
+
 `secrets.env`:
 
 ```
