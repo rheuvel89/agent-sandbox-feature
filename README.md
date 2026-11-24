@@ -176,6 +176,9 @@ GRAPH_CLIENT_SECRET="..."
     email = you@example.com
 ```
 
+Your own `~/.gitconfig` is never copied into a sandbox; without this file, git in the sandbox has no
+name and email and refuses to commit (the banner says no identity is set).
+
 Keep `.devcontainer/` under review like CI configuration (e.g. CODEOWNERS): a repo's
 `credentials.toml` decides where your secrets may be sent, and its `project` option chooses which
 of your project folders applies.
