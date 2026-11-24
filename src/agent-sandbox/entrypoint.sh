@@ -12,7 +12,8 @@
 # 1. Refuse to run outside gVisor.
 # 2. Wait for the sandbox's CA certificate and the credential proxy's address (the start step's
 #    creds service writes both into the volume at /var/lib/agent-sandbox).
-# 3. Trust the CA; make the name agent-proxy point at the credential proxy (no DNS in the sandbox).
+# 3. Trust the CA; make the name agent-proxy point at the credential proxy (no DNS in the sandbox);
+#    set the git identity from the home folder's gitconfig.
 # 4. With Docker-in-Docker: the inner dockerd's daemon.json (before it starts) and outbound NAT,
 #    since it runs without iptables.
 # 5. Prepare the banner for the first terminal.
@@ -100,6 +101,21 @@ if [ -n "$address" ]; then
   log "agent-proxy is $address"
 else
   note "WARNING: the credential proxy's address is missing; nothing can reach the internet. Is the creds container running?"
+fi
+
+# --- Git identity --------------------------------------------------------------------------
+# user.name and user.email from ~/.agent-sandbox/gitconfig (or the project's or sandbox's), which
+# the credential proxy copies into the volume. System-wide, so a repo or the user can still
+# override it; set again at every start, so a change applies at the next start.
+if command -v git >/dev/null 2>&1; then
+  for key in name email; do
+    value=$(sed -n "s/^$key=//p" "$public/git-identity" 2>/dev/null | head -n 1)
+    if [ -n "$value" ]; then
+      git config --system "user.$key" "$value"
+    else
+      git config --system --unset "user.$key" 2>/dev/null
+    fi
+  done
 fi
 
 # --- 4. Outbound NAT for Docker-in-Docker ------------------------------------------------------
