@@ -1,6 +1,6 @@
 {
   "id": "agent-sandbox",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "name": "Agent sandbox",
   "description": "Runs the dev container as a sandbox for coding agents: only under gVisor, all traffic through the sandbox's own credential proxy and egress filter, workspace in a Docker volume. Needs the agent-sandbox start step in initializeCommand.",
   "documentationURL": "https://github.com/rheuvel89/agent-sandbox-feature",
