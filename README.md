@@ -136,6 +136,27 @@ grafana.internal.example   private  # may resolve to a private address (VPN, LAN
 model.internal.example:8000 private # port 8000 only (listed ports replace 80 and 443)
 ```
 
+Indented lines under a host limit it to path prefixes, optionally to some methods (no `method=`
+means all methods):
+
+```
+api.github.com
+  path=/copilot_internal/                 # this prefix and everything below it
+gitlab.com
+  path=/api/v4/groups/1234/-/packages/nuget/  method=get,head
+api.example.com
+  path=/     method=get,head              # read-only everywhere ...
+  path=/api  method=post                  # ... plus POST on /api and below
+```
+
+A host's path lines add up: a request passes when any of them allows it. Only the methods listed
+count.
+
+Path limits win across layers, like blocks: once any layer limits a host, only the paths listed in
+any layer are allowed. The credential proxy enforces them (it decrypts limited hosts) and answers
+`403` otherwise; see `docker logs <sandbox>-creds`. Use them for hosts that accept writes from any
+account, where code could send data out with its own token.
+
 A line with an error is skipped and reported (banner, `rules`); the other lines still apply.
 
 `credentials.toml`. Every host in it must also be allowed by a rule. Credentials are only added
